@@ -15,10 +15,11 @@ public class ClientController {
     @PostMapping("/registerClient")
     public Client addClient(@RequestBody Client newClient) {
         return clientService.registerClient(
-                newClient.getClientName(),
-                newClient.getClientEmail(),
+                newClient.getName(),
+                newClient.getEmail(),
                 newClient.getMonthlyVisits(),
                 newClient.getBirthDate()
         );
     }
+
 }

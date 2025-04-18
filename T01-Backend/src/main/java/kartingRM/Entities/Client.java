@@ -1,62 +1,27 @@
 package kartingRM.Entities;
 
 import jakarta.persistence.*;
-import java.util.Date;
+import java.time.LocalDate;
+import lombok.*;
 
 @Entity
-@Table(name = "Cliente")
+@Table(name = "clients")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Client {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(unique = true, nullable = false)
-    private long id;
-    private String clientName;
-    private String clientEmail;
-    private int monthlyVisits;
-    private Date birthDate;
+    private Long id;
 
-    public Client() {
-    }
+    @Column(nullable = false)
+    private String name;
 
-    public Client(String clientName, String clientEmail, int monthlyVisits, Date birthDate) {
-        this.clientName = clientName;
-        this.clientEmail = clientEmail;
-        this.monthlyVisits = monthlyVisits;
-        this.birthDate = birthDate;
-    }
+    @Column(nullable = false)
+    private String email; // Para comprobante (PDF pág.5)
 
-    public long getId() {
-        return id;
-    }
-    public void setId(long id) {
-        this.id = id;
-    }
+    private LocalDate birthDate; // Para descuento si cumple años (PDF pág.3)
 
-    public String getClientName() {
-        return clientName;
-    }
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
-    }
-
-    public String getClientEmail() {
-        return clientEmail;
-    }
-    public void setClientEmail(String clientEmail) {
-        this.clientEmail = clientEmail;
-    }
-
-    public int getMonthlyVisits() {
-        return monthlyVisits;
-    }
-    public void setMonthlyVisits(int monthlyVisits) {
-        this.monthlyVisits = monthlyVisits;
-    }
-
-    public Date getBirthDate() {
-        return birthDate;
-    }
-    public void setBirthDate(Date birthDate) {
-        this.birthDate = birthDate;
-    }
+    @Transient // No se persiste, se calcula
+    private Integer monthlyVisits; // Para descuento frecuente (PDF pág.3)
 }

@@ -13,13 +13,17 @@ public class KartServices {
     private KartRepository kartRepository;
 
     public Kart registerKart(String kartCode, String model, String status) {
-        Optional<Kart> existingKart = kartRepository.findByCode(kartCode);
+        Optional<Kart> existingKart = kartRepository.findByKartCode(kartCode);
 
         if (existingKart.isPresent()) {
             throw new IllegalArgumentException("Duplicate");
         }
 
-        Kart kart = new Kart(kartCode, model, status);
+        Kart kart = new Kart();
+        kart.setKartCode(kartCode);
+        kart.setModel(model);
+        kart.setStatus(status);
+
         return kartRepository.save(kart);
     }
 }
