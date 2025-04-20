@@ -1,0 +1,63 @@
+/* Estilos base (puedes reemplazar con Tailwind) */
+.home-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .section-title {
+    text-align: center;
+    font-size: 2rem;
+    margin: 2rem 0;
+    color: #e63946; /* Rojo karting */
+  }
+  
+  /* Grid de tarifas */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 0 1rem;
+  }
+  
+  /* Grid de descuentos */
+  .discounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .discount-card {
+    background: #f1faee;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* CTA Section */
+  .cta-section {
+    text-align: center;
+    padding: 3rem 0;
+    background: #1d3557;
+    color: white;
+    margin-top: 2rem;
+  }
+  
+  .cta-button {
+    display: inline-block;
+    padding: 12px 30px;
+    background: #e63946;
+    color: white;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    margin-top: 1rem;
+    transition: transform 0.3s;
+  }
+  
+  .cta-button:hover {
+    transform: scale(1.05);
+  }

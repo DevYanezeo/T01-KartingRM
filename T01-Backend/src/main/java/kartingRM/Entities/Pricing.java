@@ -1,25 +1,36 @@
 package kartingRM.Entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "Pricing")
+@Table(name = "pricing")
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class Pricing {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int laps; // contador
+    @Column(nullable = false, unique = true)
+    private Integer laps;
 
-    private Double basePrice;
-    private Integer duration; // Minutos (PDF pág.3)
+    @Column(nullable = false)
+    private Integer maxMinutes;
 
-    // Para tarifas especiales (PDF pág.3)
+    @Column(nullable = false)
+    private Double regularPrice;
+
+    @Column(nullable = false)
     private Double weekendPrice;
-    private Double holidayPrice;
+
+    @Column(nullable = false)
+    private Integer totalDuration;
+
+    public Double getPriceForDay(boolean isWeekend, boolean isHoliday) {
+        return isHoliday ? this.weekendPrice * 1.2 :
+                isWeekend ? this.weekendPrice :
+                        this.regularPrice;
+    }
 }

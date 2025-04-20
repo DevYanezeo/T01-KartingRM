@@ -1,0 +1,62 @@
+.hero-section {
+  width: 100%;
+  height: 200px; /* Mantenemos tu medida base */
+  background-color: #1A1A1D; /* Negro base del logo */
+  background-size: 40px 40px;
+  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.hero-content {
+  z-index: 2;
+  padding: 0 20px;
+}
+
+.hero-title {
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.hero-subtitle {
+  color: #FFD700; /* Amarillo */
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.hero-cta {
+  background-color: #E63946; /* Rojo */
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  font-size: 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.hero-cta:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive (manteniendo tu estructura) */
+@media (max-width: 768px) {
+  .hero-section {
+    height: 300px;
+  }
+  
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .kart-silhouette {
+    right: 5%;
+    transform: scale(0.8);
+  }
+}

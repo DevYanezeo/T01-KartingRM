@@ -9,4 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/pricing")
 @CrossOrigin(origins = "*")
 public class PricingControllers {
+
+
+    
 }

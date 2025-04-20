@@ -18,4 +18,9 @@ public class TimeSlot {
     private LocalTime startTime;
     private LocalTime endTime;
     private Boolean isAvailable;
+    auto_increment description not null
+    entity
+
+    private boolean isAvailable;
+
 }

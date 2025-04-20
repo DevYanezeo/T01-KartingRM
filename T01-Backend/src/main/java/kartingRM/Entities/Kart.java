@@ -10,9 +10,15 @@ import lombok.*;
 @Table(name = "Kart")
 public class Kart {
     @Id
+    @Column(name = "kart_code")
     private String kartCode;
 
+    @Column(nullable = false)
     private String model;
-    private String status;
+
+    @Column(nullable = false)
+    private boolean underMaintenance;
+
+    private String description;
 
 }

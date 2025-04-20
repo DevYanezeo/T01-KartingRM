@@ -17,11 +17,32 @@ public class Client {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(nullable = false)
-    private String email; // Para comprobante (PDF pág.5)
+    private LocalDate birthDate;
 
-    private LocalDate birthDate; // Para descuento si cumple años (PDF pág.3)
+    @Column(nullable = false)
+    private Integer monthlyVisits = 0;
 
-    @Transient // No se persiste, se calcula
-    private Integer monthlyVisits; // Para descuento frecuente (PDF pág.3)
+    // Método para determinar la categoría del cliente según visitas mensuales (PDF página 3)
+    public String getClientCategory() {
+        if (monthlyVisits >= 7) return "MUY_FRECUENTE";
+        if (monthlyVisits >= 5) return "FRECUENTE";
+        if (monthlyVisits >= 2) return "REGULAR";
+        return "NO_FRECUENTE";
+    }
+
+    // Método para incrementar visitas mensuales
+    public void incrementMonthlyVisits() {
+        this.monthlyVisits++;
+    }
+
+    // Método para verificar si hoy es su cumpleaños (PDF página 3)
+    public boolean isBirthdayToday() {
+        LocalDate today = LocalDate.now();
+        return birthDate.getMonth() == today.getMonth()
+                && birthDate.getDayOfMonth() == today.getDayOfMonth();
+    }
 }
