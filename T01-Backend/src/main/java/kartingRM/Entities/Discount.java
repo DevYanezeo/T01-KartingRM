@@ -1,7 +1,7 @@
 package kartingRM.Entities;
 
-import lombok.*;
 import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "discounts")
@@ -13,17 +13,17 @@ public class Discount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String discountType;  // "GROUP_SIZE", "FREQUENT_CLIENT", "BIRTHDAY", "SPECIAL_PROMO"
-
-    private String description;
+    @Column(nullable = false, length = 20)
+    private String discountType; // GROUP_SIZE, FREQUENT_CLIENT, BIRTHDAY
 
     @Column(nullable = false)
-    private Double percentage;
+    private Double percentage; // 0.10 para 10%, etc.
 
+    // Para GROUP_SIZE (PDF pág.3)
     private Integer minGroupSize;
     private Integer maxGroupSize;
 
+    // Para FREQUENT_CLIENT (PDF pág.3)
     private Integer minVisits;
     private Integer maxVisits;
 }

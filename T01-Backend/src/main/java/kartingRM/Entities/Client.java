@@ -2,6 +2,9 @@ package kartingRM.Entities;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.*;
 
 @Entity
@@ -26,6 +29,11 @@ public class Client {
     @Column(nullable = false)
     private Integer monthlyVisits = 0;
 
+    // Relación con reservas
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+    private List<Booking> bookings = new ArrayList<>();
+
+
     // Método para determinar la categoría del cliente según visitas mensuales (PDF página 3)
     public String getClientCategory() {
         if (monthlyVisits >= 7) return "MUY_FRECUENTE";
@@ -36,8 +44,9 @@ public class Client {
 
     // Método para incrementar visitas mensuales
     public void incrementMonthlyVisits() {
-        this.monthlyVisits++;
+        this.monthlyVisits += 1;
     }
+
 
     // Método para verificar si hoy es su cumpleaños (PDF página 3)
     public boolean isBirthdayToday() {

@@ -5,9 +5,11 @@ import kartingRM.Repositories.KartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Optional;
 import java.util.List;
-
+import java.util.List;
 @Service
 public class KartServices {
     @Autowired
@@ -36,10 +38,10 @@ public class KartServices {
     }
 
     /**
-     * Obtiene karts disponibles (status=true y underMaintenance=false)
+     * Obtiene karts disponibles (underMaintenance=false)
      */
     public List<Kart> getAvailableKarts() {
-        return kartRepository.findByStatusTrueAndUnderMaintenanceFalse();
+        return kartRepository.findAvailableKartsOnlyByMaintenance();
     }
 
     /**
@@ -56,9 +58,9 @@ public class KartServices {
 
         return kartRepository.save(kart);
     }
-
-
-
+    public List<Kart> findAvailableKarts(LocalDate date, LocalTime startTime, int duration) {
+        return kartRepository.findAvailableKarts(date, startTime, duration);
+    }
 
 }
 

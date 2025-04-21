@@ -1,17 +1,9 @@
 package kartingRM.Entities;
 
-
-import lombok.*;
 import jakarta.persistence.*;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
-
-import java.util.List;
+import lombok.*;
+import java.time.*;
+import java.util.*;
 
 @Entity
 @Table(name = "bookings")
@@ -23,8 +15,8 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
-    private String reservationCode; // Código único (PDF pág.5)
+    @Column(unique = true, length = 12)
+    private String reservationCode; // RES-ABC123 (PDF pág.5)
 
     @Column(nullable = false)
     private LocalDate date;
@@ -32,30 +24,58 @@ public class Booking {
     @Column(nullable = false)
     private LocalTime startTime;
 
-    private Integer duration; // En minutos (PDF pág.3)
+    @Column(nullable = false)
+    private Integer duration; // 30, 35 o 40 min (PDF pág.3)
 
-    private String status; // CONFIRMED, CANCELLED
+    @Column(nullable = false)
+    private Integer laps; // 10, 15 o 20 (PDF pág.3)
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status = Status.CONFIRMED;
 
     // Relaciones
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private Client client;
 
-    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
-    private List<Guest> guests;
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BookingParticipant> participants = new ArrayList<>();
 
     @ManyToMany
-    private List<TimeSlot> timeSlots;
+    @JoinTable(
+            name = "booking_karts",
+            joinColumns = @JoinColumn(name = "booking_id"),
+            inverseJoinColumns = @JoinColumn(name = "kart_code"))
+    private List<Kart> assignedKarts = new ArrayList<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Pricing pricing;
 
-    // Campos calculados
+    // Información de pago (PDF pág.5)
+    @Column(nullable = false)
     private Double subtotal;
+
+    @Column(nullable = false)
     private Double totalDiscount;
+
+    @Column(nullable = false)
     private Double tax;
+
+    @Column(nullable = false)
     private Double total;
 
-    // Para días especiales (PDF pág.3)
-    private Boolean isWeekend;
-    private Boolean isHoliday;
+    // Días especiales (PDF pág.3)
+    @Column(nullable = false)
+    private Boolean isWeekend = false;
+
+    @Column(nullable = false)
+    private Boolean isHoliday = false;
+
+    @Column(nullable = false)
+    private Boolean hasBirthdayPromo = false;
+
+    public enum Status {
+        CONFIRMED, CANCELLED, COMPLETED
+    }
 }

@@ -3,6 +3,9 @@ package kartingRM.Entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -17,8 +20,12 @@ public class Kart {
     private String model;
 
     @Column(nullable = false)
-    private boolean underMaintenance;
+    private boolean underMaintenance = false;
 
     private String description;
+
+    // Relación con reservas
+    @ManyToMany(mappedBy = "assignedKarts")
+    private List<Booking> bookings = new ArrayList<>();
 
 }
