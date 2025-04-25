@@ -19,6 +19,9 @@ public class Kart {
     @Column(nullable = false)
     private String model;
 
+    @Enumerated(EnumType.STRING)
+    private KartStatus status;
+
     @Column(nullable = false)
     private boolean underMaintenance = false;
 
@@ -28,4 +31,10 @@ public class Kart {
     @ManyToMany(mappedBy = "assignedKarts")
     private List<Booking> bookings = new ArrayList<>();
 
+    // Enum para estados del kart
+    public enum KartStatus {
+        DISPONIBLE,
+        RESERVADO,
+        EN_MANTENIMIENTO
+    }
 }

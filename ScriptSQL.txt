@@ -1,0 +1,49 @@
+SCRIPT DE POBLACION COMPLETO
+
+INSERT INTO clients (name, email, birth_date, monthly_visits) VALUES
+('Juan Pérez', 'juan.perez@email.com', '1990-05-15', 0),
+('María García', 'maria.garcia@email.com', '1985-08-22', 0),
+('Carlos López', 'carlos.lopez@email.com', '1995-11-30', 0),
+('Ana Martínez', 'ana.martinez@email.com', '2000-03-10', 0),
+('Luis Rodríguez', 'luis.rodriguez@email.com', '1992-07-18', 0),
+('Sofía Hernández', 'sofia.hernandez@email.com', '1998-09-25', 0),
+('Pedro Sánchez', 'pedro.sanchez@email.com', '1988-12-05', 0),
+('Eliseo Yañez', 'eliseo.yanez@email.com', '1985-04-24', 0),
+('Juan Yañez', 'juan.yanez@email.com', '1990-04-22', 0),
+('Gonzalo Yañez', 'gonzalo.yanez@email.com', '1988-04-22', 0),
+('Jose Ramírez', 'jose.ramirez@email.com', '1992-06-10', 0),
+('Carlos Díaz', 'carlos.diaz@email.com', '1987-09-05', 0);
+
+INSERT INTO kart (kart_code, model, under_maintenance, description, status) VALUES
+('K001', 'Sodikart RT8', false, 'Kart en perfecto estado', 'DISPONIBLE'),
+('K002', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K003', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K004', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K005', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K006', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K007', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K008', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K009', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K010', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K011', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K012', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K013', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K014', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
+('K015', 'Sodikart RT8', true, 'En mantenimiento');
+
+INSERT INTO pricing (laps, base_price, total_duration) VALUES
+(10, 15000.00, 30),  -- Precio base: $15,000
+(15, 20000.00, 35),  -- Precio base: $20,000
+(20, 25000.00, 40);  -- Precio base: $25,000
+
+
+INSERT INTO discounts (discount_type, percentage, min_group_size, max_group_size, min_visits, max_visits) VALUES
+('GROUP_SIZE', 0.00, 1, 2, NULL, NULL),
+('GROUP_SIZE', 0.10, 3, 5, NULL, NULL),
+('GROUP_SIZE', 0.20, 6, 10, NULL, NULL),
+('GROUP_SIZE', 0.30, 11, 15, NULL, NULL),
+('FREQUENT_CLIENT', 0.00, NULL, NULL, 0, 1),
+('FREQUENT_CLIENT', 0.10, NULL, NULL, 2, 4),
+('FREQUENT_CLIENT', 0.20, NULL, NULL, 5, 6),
+('FREQUENT_CLIENT', 0.30, NULL, NULL, 7, NULL),
+('BIRTHDAY', 0.50, NULL, NULL, NULL, NULL);

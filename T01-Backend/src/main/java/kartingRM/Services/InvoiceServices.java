@@ -3,35 +3,48 @@ package kartingRM.Services;
 import kartingRM.Entities.Booking;
 import kartingRM.Entities.Invoice;
 import kartingRM.Repositories.InvoiceRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class InvoiceServices {
-    @Autowired
-    private InvoiceRepository invoiceRepository;
 
-    public Invoice generateInvoice(Booking booking) {
+    private final InvoiceRepository invoiceRepository;
+
+    public InvoiceServices(InvoiceRepository invoiceRepository) {
+        this.invoiceRepository = invoiceRepository;
+    }
+
+    public List<Invoice> getAllInvoices() {
+        return invoiceRepository.findAll();
+    }
+
+    public Optional<Invoice> getById(Long id) {
+        return invoiceRepository.findById(id);
+    }
+
+    public Optional<Invoice> getByInvoiceNumber(String number) {
+        return invoiceRepository.findByInvoiceNumber(number);
+    }
+
+    public Invoice saveInvoice(Booking booking, double totalToPay, String pdfPath) {
         Invoice invoice = new Invoice();
-        invoice.setInvoiceNumber("INV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        invoice.setIssueDate(LocalDateTime.now());
         invoice.setBooking(booking);
-        invoice.setClientName(booking.getClient().getName());
-        invoice.setClientEmail(booking.getClient().getEmail());
-        invoice.setParticipantCount(booking.getParticipants().size());
-        invoice.setTotalWithTaxes(booking.getTotal());
-
-        // En una implementación real, aquí generaría el PDF y guardaría la ruta
-        invoice.setPdfFilePath("/invoices/" + invoice.getInvoiceNumber() + ".pdf");
+        invoice.setInvoiceNumber(generateInvoiceNumber());
+        invoice.setIssueDate(LocalDateTime.now());
+        invoice.setClientName(booking.getOwner().getName());
+        invoice.setClientEmail(booking.getOwner().getEmail());
+        invoice.setTotalToPay(totalToPay);
+        invoice.setPdfFilePath(pdfPath); // en esta etapa puede ser un placeholder
 
         return invoiceRepository.save(invoice);
     }
 
-    public Optional<Invoice> findByBookingId(Long bookingId) {
-        return invoiceRepository.findByBookingId(bookingId);
+    private String generateInvoiceNumber() {
+        long count = invoiceRepository.count() + 1;
+        return String.format("INV-%06d", count);
     }
 }

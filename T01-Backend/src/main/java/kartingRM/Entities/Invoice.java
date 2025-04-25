@@ -10,12 +10,13 @@ import java.time.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Invoice {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String invoiceNumber;
+    private String invoiceNumber; // Ej: INV-000123
 
     @Column(nullable = false)
     private LocalDateTime issueDate;
@@ -25,18 +26,16 @@ public class Invoice {
     private Booking booking;
 
     @Column(nullable = false)
-    private String pdfFilePath; // Ruta al PDF generado
-
-    // Campos requeridos por PDF pág.5
-    @Column(nullable = false)
     private String clientName;
 
     @Column(nullable = false)
     private String clientEmail;
 
     @Column(nullable = false)
-    private Integer participantCount;
+    private Double totalToPay;
 
+    // Se generará después
     @Column(nullable = false)
-    private Double totalWithTaxes;
+    private String pdfFilePath;
+
 }

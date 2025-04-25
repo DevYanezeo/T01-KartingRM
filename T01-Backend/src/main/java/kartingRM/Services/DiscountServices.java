@@ -11,37 +11,19 @@ public class DiscountServices {
     @Autowired
     private DiscountRepository discountRepository;
 
-    public List<Discount> findAllDiscounts() {
-        return discountRepository.findAll();
+    public Double getApplicableGroupDiscount(Integer groupSize) {
+        List<Discount> discounts = discountRepository.findGroupSizeDiscounts(groupSize);
+        return discounts.isEmpty() ? 0.0 : discounts.getFirst().getPercentage();
     }
 
-    public Discount findDiscountById(Long id) {
-        return discountRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Descuento no encontrado"));
-    }
 
-    public Discount saveDiscount(Discount discount) {
-        return discountRepository.save(discount);
-    }
-
-    public void deleteDiscount(Long id) {
-        discountRepository.deleteById(id);
-    }
-
-    public Double getGroupDiscount(Integer groupSize) {
-        return discountRepository.findApplicableGroupDiscount(groupSize)
-                .map(Discount::getPercentage)
-                .orElse(0.0);
-    }
-
-    public Double getFrequentClientDiscount(Integer visits) {
-        return discountRepository.findApplicableFrequentClientDiscount(visits)
-                .map(Discount::getPercentage)
-                .orElse(0.0);
+    public Double getApplicableFrequentClientDiscount(Integer visits) {
+        List<Discount> discounts = discountRepository.findFrequentClientDiscounts(visits);
+        return discounts.isEmpty() ? 0.0 : discounts.getFirst().getPercentage();
     }
 
     public Double getBirthdayDiscount() {
-        return discountRepository.findByDiscountType("BIRTHDAY")
+        return discountRepository.findBirthdayDiscount()
                 .map(Discount::getPercentage)
                 .orElse(0.0);
     }

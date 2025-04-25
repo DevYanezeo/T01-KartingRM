@@ -11,12 +11,13 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Booking {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, length = 12)
-    private String reservationCode; // RES-ABC123 (PDF pág.5)
+    private String reservationCode; // Ej: RES-ABC123
 
     @Column(nullable = false)
     private LocalDate date;
@@ -25,55 +26,57 @@ public class Booking {
     private LocalTime startTime;
 
     @Column(nullable = false)
-    private Integer duration; // 30, 35 o 40 min (PDF pág.3)
+    private LocalTime endTime;
 
     @Column(nullable = false)
-    private Integer laps; // 10, 15 o 20 (PDF pág.3)
+    private Integer duration; // En minutos: 30, 35, 40
+
+    @Column(nullable = false)
+    private Integer laps; // 10, 15 o 20
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status = Status.CONFIRMED;
 
-    // Relaciones
+    // Cliente responsable de la reserva (el que paga)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
-    private Client client;
+    private Client owner;
 
-    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BookingParticipant> participants = new ArrayList<>();
+    // Participantes de la reserva (incluye al owner si se desea)
+    @ManyToMany
+    @JoinTable(
+            name = "booking_participants",
+            joinColumns = @JoinColumn(name = "booking_id"),
+            inverseJoinColumns = @JoinColumn(name = "client_id")
+    )
+    private List<Client> participants = new ArrayList<>();
 
+    // Karts asignados a esta reserva
     @ManyToMany
     @JoinTable(
             name = "booking_karts",
             joinColumns = @JoinColumn(name = "booking_id"),
-            inverseJoinColumns = @JoinColumn(name = "kart_code"))
+            inverseJoinColumns = @JoinColumn(name = "kart_code")
+    )
     private List<Kart> assignedKarts = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // Tarifa asociada a esta reserva
+    @ManyToOne
+    @JoinColumn(nullable = false)
     private Pricing pricing;
 
-    // Información de pago (PDF pág.5)
-    @Column(nullable = false)
-    private Double subtotal;
+    // Relación con factura (opcional si aún no se ha emitido)
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
+    private Invoice invoice;
 
-    @Column(nullable = false)
-    private Double totalDiscount;
-
-    @Column(nullable = false)
-    private Double tax;
-
-    @Column(nullable = false)
-    private Double total;
-
-    // Días especiales (PDF pág.3)
-    @Column(nullable = false)
-    private Boolean isWeekend = false;
-
-    @Column(nullable = false)
-    private Boolean isHoliday = false;
-
-    @Column(nullable = false)
-    private Boolean hasBirthdayPromo = false;
+    @PrePersist
+    @PreUpdate
+    private void calculateEndTime() {
+        if (startTime != null && duration != null) {
+            this.endTime = startTime.plusMinutes(duration);
+        }
+    }
 
     public enum Status {
         CONFIRMED, CANCELLED, COMPLETED

@@ -29,10 +29,8 @@ public class Client {
     @Column(nullable = false)
     private Integer monthlyVisits = 0;
 
-    // Relación con reservas
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "owner")
     private List<Booking> bookings = new ArrayList<>();
-
 
     // Método para determinar la categoría del cliente según visitas mensuales (PDF página 3)
     public String getClientCategory() {

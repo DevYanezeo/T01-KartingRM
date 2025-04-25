@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
-
 @Entity
 @Table(name = "pricing")
 @Data
@@ -16,27 +15,22 @@ public class Pricing {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private Integer laps; // 10, 15 o 20 (PDF pág.3)
+    private Integer laps; // 10, 15 o 20
 
     @Column(nullable = false)
-    private Integer maxMinutes; // 10, 15 o 20 (PDF pág.3)
+    private Double basePrice; // Precio base (días normales)
 
     @Column(nullable = false)
-    private Double regularPrice; // Precio días normales
+    private Integer totalDuration; // 30, 35 o 40 min
 
-    @Column(nullable = false)
-    private Double weekendPrice; // Precio fin de semana (+20%)
-
-    @Column(nullable = false)
-    private Integer totalDuration; // 30, 35 o 40 min (PDF pág.3)
-
-    // Relación con reservas
     @OneToMany(mappedBy = "pricing")
     private List<Booking> bookings = new ArrayList<>();
 
     public Double getPriceForDay(boolean isWeekend, boolean isHoliday) {
-        return isHoliday ? weekendPrice * 1.2 : // +20% en feriados
-                isWeekend ? weekendPrice :
-                        regularPrice;
+        double price = basePrice;
+        if (isWeekend || isHoliday) {
+            price *= 1.05; // +5% para fines de semana y feriados
+        }
+        return price;
     }
 }

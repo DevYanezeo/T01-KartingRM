@@ -1,64 +1,137 @@
 package kartingRM.Services;
 
+import jakarta.transaction.Transactional;
 import kartingRM.Entities.*;
 import kartingRM.Repositories.*;
+import kartingRM.DTOs.BookingRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class BookingServices {
-    @Autowired
-    private BookingRepository bookingRepository;
+
     @Autowired
     private ClientRepository clientRepository;
+
     @Autowired
     private KartRepository kartRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
     @Autowired
     private PricingRepository pricingRepository;
+
     @Autowired
-    private DiscountServices discountService;
+    private DiscountServices discountServices;
+
     @Autowired
-    private BookingParticipantServices bookingParticipantServices;
-    @Autowired
-    private InvoiceServices invoiceService;
+    private BookingRepository bookingRepository;
+    private static final double WEEKEND_SURCHARGE = 0.05; // +5%
+    private static final double HOLIDAY_SURCHARGE = 0.05; // +5%
 
-    @Transactional
-    public Booking createBooking(Booking booking, List<Long> participantIds) {
-        Client client = clientRepository.findById(booking.getClient().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
+    public Booking createBooking(BookingRequest request) {
+        // 1. Validar y obtener datos básicos
+        Client owner = validateOwner(request.getOwnerId());
+        List<Client> participants = validateParticipants(request.getParticipantIds());
+        Pricing pricing = validatePricing(request.getLaps(), request.getDuration());
 
-        Pricing pricing = pricingRepository.findByLaps(booking.getLaps())
-                .orElseThrow(() -> new IllegalArgumentException("Tarifa no válida"));
+        List<Kart> karts = assignAvailableKarts(
+                request.getDate(),
+                request.getStartTime(),
+                request.getDuration(),
+                participants.size() + 1 // owner + participants
+        );
 
-        booking.setReservationCode(generateReservationCode());
-        booking.setClient(client);
-        booking.setPricing(pricing);
-        booking.setDuration(pricing.getTotalDuration());
+        // 2. Preparar lista completa de participantes
+        List<Client> allParticipants = prepareParticipants(owner, participants);
+        int totalPeople = allParticipants.size();
 
-        booking.setIsWeekend(isWeekend(booking.getDate()));
-        booking.setIsHoliday(isHoliday(booking.getDate()));
+        // 3. Incrementar visitas de clientes
+        incrementVisits(owner, participants);
 
-        validateBookingAvailability(booking);
+        // 4. Calcular precio base con posibles recargos
+        boolean isWeekend = isWeekend(request.getDate());
+        boolean isHoliday = isHoliday(request.getDate());
+        double basePrice = calculateFinalBasePrice(pricing.getBasePrice(), isWeekend, isHoliday);
 
-        assignKarts(booking, participantIds.size());
+        // Aplicar descuento por tamaño de grupo
+        double groupDiscountRate = discountServices.getApplicableGroupDiscount(totalPeople);
+        double priceAfterGroupDiscount = pricing.getBasePrice() * (1 - groupDiscountRate);
 
-        processParticipants(booking, participantIds);
+        // Descuento por cliente frecuente (solo para el dueño)
+        double frequentDiscountRate = discountServices.getApplicableFrequentClientDiscount(owner.getMonthlyVisits());
+        double ownerPrice = priceAfterGroupDiscount * (1 - frequentDiscountRate);
 
-        calculatePricing(booking);
+        // Descuento por cumpleaños (Lógica fija)
+        double birthdayDiscountRate = discountServices.getBirthdayDiscount();
+        long birthdayPeople = countBirthdayPeople(allParticipants);
+        double totalBirthdayDiscount = birthdayPeople * priceAfterGroupDiscount * birthdayDiscountRate;
 
+
+        // 6. Calcular total final
+        double total = (totalPeople - 1) * priceAfterGroupDiscount
+                - totalBirthdayDiscount
+                + ownerPrice;
+
+
+        // 7. Crear y guardar la reserva
+        Booking booking = createBookingEntity(request, owner, participants, karts, pricing, basePrice, total);
         Booking savedBooking = bookingRepository.save(booking);
 
-        invoiceService.generateInvoice(savedBooking);
+        // 8. Crear y guardar la factura
+        Invoice invoice = createInvoice(savedBooking, owner, total);
+        invoiceRepository.save(invoice);
 
-        return savedBooking;
+        // 9. Asociar factura a la reserva
+        savedBooking.setInvoice(invoice);
+        return bookingRepository.save(savedBooking);
     }
 
-    private String generateReservationCode() {
-        return "RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    // --- Métodos auxiliares ---
+
+    private Client validateOwner(Long ownerId) {
+        return clientRepository.findById(ownerId)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+    }
+
+    private List<Client> validateParticipants(List<Long> participantIds) {
+        List<Client> participants = clientRepository.findAllById(participantIds);
+        if (participants.size() != participantIds.size()) {
+            throw new RuntimeException("Algunos participantes no fueron encontrados");
+        }
+        return participants;
+    }
+
+    private List<Kart> validateKarts(List<String> kartCodes) {
+        List<Kart> karts = kartRepository.findAllById(kartCodes);
+        if (karts.size() != kartCodes.size()) {
+            throw new RuntimeException("Algunos karts no están disponibles");
+        }
+        return karts;
+    }
+
+    private Pricing validatePricing(Integer laps, Integer duration) {
+        return pricingRepository.findByLapsAndTotalDuration(laps, duration)
+                .orElseThrow(() -> new RuntimeException("Tarifa no disponible para esta configuración"));
+    }
+
+    private List<Client> prepareParticipants(Client owner, List<Client> participants) {
+        List<Client> allParticipants = new ArrayList<>(participants);
+        allParticipants.add(owner);
+        return allParticipants;
+    }
+
+    private void incrementVisits(Client owner, List<Client> participants) {
+        owner.incrementMonthlyVisits();
+        participants.forEach(Client::incrementMonthlyVisits);
     }
 
     private boolean isWeekend(LocalDate date) {
@@ -67,133 +140,103 @@ public class BookingServices {
     }
 
     private boolean isHoliday(LocalDate date) {
-        // Implementar lógica para verificar feriados
-        return false;
-    }
-
-    private void validateBookingAvailability(Booking booking) {
-        // Verificar horario de atención
-        LocalTime startTime = booking.getStartTime();
-        LocalTime endTime = startTime.plusMinutes(booking.getDuration());
-
-        DayOfWeek dayOfWeek = booking.getDate().getDayOfWeek();
-        boolean isWeekend = dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
-
-        LocalTime openingTime = isWeekend ? LocalTime.of(10, 0) : LocalTime.of(14, 0);
-        LocalTime closingTime = LocalTime.of(22, 0);
-
-        if (startTime.isBefore(openingTime) || endTime.isAfter(closingTime)) {
-            throw new IllegalStateException("Fuera del horario de atención");
-        }
-
-        // Verificar disponibilidad de pista
-        boolean exists = bookingRepository.existsOverlappingBooking(
-                booking.getDate(),
-                booking.getStartTime(),
-                booking.getDuration());
-
-        if (exists) {
-            throw new IllegalStateException("Ya existe una reserva en ese horario");
-        }
-    }
-
-    private void assignKarts(Booking booking, int kartsNeeded) {
-        List<Kart> availableKarts = kartRepository.findAvailableKarts(
-                booking.getDate(),
-                booking.getStartTime(),
-                booking.getDuration());
-
-        if (availableKarts.size() < kartsNeeded) {
-            throw new IllegalStateException("No hay suficientes karts disponibles");
-        }
-
-        booking.setAssignedKarts(availableKarts.stream()
-                .limit(kartsNeeded)
-                .collect(Collectors.toList()));
-    }
-
-    private void processParticipants(Booking booking, List<Long> participantIds) {
-        int maxBirthdayDiscounts = calculateMaxBirthdayDiscounts(participantIds.size());
-        int appliedBirthdayDiscounts = 0;
-
-        for (Long clientId : participantIds) {
-            Client client = clientRepository.findById(clientId)
-                    .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado: " + clientId));
-
-            BookingParticipant participant = new BookingParticipant();
-            participant.setBooking(booking);
-            participant.setClient(client);
-            participant.setName(client.getName());
-            participant.setEmail(client.getEmail());
-
-            if (client.isBirthdayToday() && appliedBirthdayDiscounts < maxBirthdayDiscounts) {
-                participant.setIsBirthday(true);
-                appliedBirthdayDiscounts++;
-            }
-
-            bookingParticipantServices.saveParticipant(participant);
-        }
-
-        booking.setHasBirthdayPromo(appliedBirthdayDiscounts > 0);
+        // Lista de feriados (ejemplo para Chile)
+        Set<LocalDate> holidays = Set.of(
+                LocalDate.of(date.getYear(), 1, 1),   // Año Nuevo
+                LocalDate.of(date.getYear(), 5, 1),   // Día del Trabajo
+                LocalDate.of(date.getYear(), 9, 18),  // Fiestas Patrias
+                LocalDate.of(date.getYear(), 9, 19),  // Día de las Glorias del Ejército
+                LocalDate.of(date.getYear(), 12, 25)  // Navidad
+        );
+        return holidays.contains(date);
     }
 
     private int calculateMaxBirthdayDiscounts(int groupSize) {
-        return groupSize >= 6 ? 2 : groupSize >= 3 ? 1 : 0;
+        if (groupSize >= 3 && groupSize <= 5) {
+            return 1; // 1 descuento para grupos de 3-5
+        } else if (groupSize >= 6 && groupSize <= 10) {
+            return 2; // 2 descuentos para grupos de 6-10
+        }
+        return 0; // No aplica para otros tamaños
     }
 
-    private void calculatePricing(Booking booking) {
-        double basePrice = booking.getPricing().getPriceForDay(
-                booking.getIsWeekend(),
-                booking.getIsHoliday());
-
-        int groupSize = booking.getParticipants().size();
-        booking.setSubtotal(basePrice * groupSize);
-
-        // Aplicar descuentos
-        double groupDiscount = discountService.getGroupDiscount(groupSize);
-        double frequentDiscount = booking.getClient().getMonthlyVisits() >= 2 ?
-                discountService.getFrequentClientDiscount(booking.getClient().getMonthlyVisits()) : 0.0;
-        double birthdayDiscount = booking.getHasBirthdayPromo() ?
-                discountService.getBirthdayDiscount() : 0.0;
-
-        double totalDiscountPercent = groupDiscount + frequentDiscount + birthdayDiscount;
-        double totalDiscountAmount = booking.getSubtotal() * totalDiscountPercent;
-        booking.setTotalDiscount(totalDiscountAmount);
-
-        // Calcular impuestos y total
-        double taxableAmount = booking.getSubtotal() - totalDiscountAmount;
-        booking.setTax(taxableAmount * 0.19); // IVA 19%
-        booking.setTotal(taxableAmount + booking.getTax());
+    private long countBirthdayPeople(List<Client> participants) {
+        return participants.stream()
+                .filter(Client::isBirthdayToday)
+                .count();
     }
 
-    public List<Booking> getWeeklySchedule(LocalDate startDate) {
-        return bookingRepository.findByDateBetween(startDate, startDate.plusDays(6));
+    private double calculateFinalBasePrice(double basePrice, boolean isWeekend, boolean isHoliday) {
+        double finalPrice = basePrice;
+        if (isWeekend) {
+            finalPrice *= (1 + WEEKEND_SURCHARGE);
+        }
+        if (isHoliday && !isWeekend) { // Solo aplicar si no es fin de semana
+            finalPrice *= (1 + HOLIDAY_SURCHARGE);
+        }
+        return finalPrice;
     }
 
-    @Transactional
-    public Booking cancelBooking(Long bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
-        booking.setStatus(Booking.Status.CANCELLED);
-        return bookingRepository.save(booking);
+    private double calculateFinalTotalPrice(int totalPeople, double groupPrice, double ownerPrice, int birthdayDiscounts) {
+        int regularParticipants = totalPeople - 1 - birthdayDiscounts;
+        return (regularParticipants * groupPrice) + ownerPrice + (birthdayDiscounts * groupPrice * 0.5);
     }
 
-    public Booking completeBooking(Long bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
-        booking.setStatus(Booking.Status.COMPLETED);
 
-        // Incrementar visitas para los clientes
-        booking.getParticipants().forEach(participant -> {
-            Client client = participant.getClient();
-            client.incrementMonthlyVisits();
-            clientRepository.save(client);
-        });
-
-        return bookingRepository.save(booking);
+    private Booking createBookingEntity(BookingRequest request, Client owner,
+                                        List<Client> participants, List<Kart> karts,
+                                        Pricing pricing, double basePrice, double total) {
+        Booking booking = new Booking();
+        booking.setReservationCode(generateReservationCode());
+        booking.setDate(request.getDate());
+        booking.setStartTime(request.getStartTime());
+        booking.setDuration(request.getDuration());
+        booking.setLaps(request.getLaps());
+        booking.setStatus(Booking.Status.CONFIRMED);
+        booking.setOwner(owner);
+        booking.setParticipants(participants);
+        booking.setAssignedKarts(karts);
+        booking.setPricing(pricing);
+        return booking;
     }
 
-    public Optional<Invoice> getBookingInvoice(Long bookingId) {
-        return invoiceService.findByBookingId(bookingId);
+    private Invoice createInvoice(Booking booking, Client owner, double total) {
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceNumber(generateInvoiceNumber());
+        invoice.setIssueDate(LocalDateTime.now());
+        invoice.setBooking(booking);
+        invoice.setClientName(owner.getName());
+        invoice.setClientEmail(owner.getEmail());
+        invoice.setTotalToPay(total); // Considerar IVA si aplica
+        invoice.setPdfFilePath("pendiente.pdf");
+        return invoice;
+    }
+
+    private String generateReservationCode() {
+        String code;
+        do {
+            code = "RES-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        } while (bookingRepository.existsByReservationCode(code));
+        return code;
+    }
+
+    private List<Kart> assignAvailableKarts(LocalDate date, LocalTime startTime, int duration, int kartsNeeded) {
+        LocalTime endTime = startTime.plusMinutes(duration);
+        List<Kart> availableKarts = kartRepository.findAvailableKarts(date, startTime, endTime);
+
+        if (availableKarts.size() < kartsNeeded) {
+            throw new IllegalStateException(
+                    "No hay suficientes karts. Requeridos: " + kartsNeeded +
+                            ", Disponibles: " + availableKarts.size()
+            );
+        }
+
+        return availableKarts.stream()
+                .limit(kartsNeeded)
+                .collect(Collectors.toList());
+    }
+
+    private String generateInvoiceNumber() {
+        return "INV-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
 }
