@@ -5,9 +5,9 @@ import kartingRM.Entities.*;
 import kartingRM.Repositories.*;
 import kartingRM.DTOs.BookingRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,111 +16,94 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class BookingServices {
+    private final BookingRepository bookingRepository;
+    private final ClientServices clientServices;
+    private final DiscountServices discountServices;
+    private final InvoiceServices invoiceServices;
+    private final KartServices kartServices;
+    private final PDFGeneratorServices pdfGenerator;
+    private final PricingServices pricingServices;
 
-    @Autowired
-    private ClientRepository clientRepository;
-
-    @Autowired
-    private KartRepository kartRepository;
-
-    @Autowired
-    private InvoiceRepository invoiceRepository;
-
-    @Autowired
-    private PricingRepository pricingRepository;
-
-    @Autowired
-    private DiscountServices discountServices;
-
-    @Autowired
-    private BookingRepository bookingRepository;
     private static final double WEEKEND_SURCHARGE = 0.05; // +5%
     private static final double HOLIDAY_SURCHARGE = 0.05; // +5%
 
     public Booking createBooking(BookingRequest request) {
-        // 1. Validar y obtener datos básicos
+        // 1. Validar datos básicos y calcular duración
         Client owner = validateOwner(request.getOwnerId());
         List<Client> participants = validateParticipants(request.getParticipantIds());
-        Pricing pricing = validatePricing(request.getLaps(), request.getDuration());
 
+        int duration = pricingServices.getDurationByLaps(request.getLaps());
+
+        // 2. Validar disponibilidad de karts (con la duración calculada)
         List<Kart> karts = assignAvailableKarts(
                 request.getDate(),
                 request.getStartTime(),
-                request.getDuration(),
-                participants.size() + 1 // owner + participants
+                duration,
+                participants.size() + 1
         );
 
-        // 2. Preparar lista completa de participantes
-        List<Client> allParticipants = prepareParticipants(owner, participants);
-        int totalPeople = allParticipants.size();
+        List<Client> allParticipants = new ArrayList<>(participants);
+        allParticipants.add(owner);
+        int totalPeople = participants.size();
 
         // 3. Incrementar visitas de clientes
         incrementVisits(owner, participants);
 
-        // 4. Calcular precio base con posibles recargos
-        boolean isWeekend = isWeekend(request.getDate());
-        boolean isHoliday = isHoliday(request.getDate());
-        double basePrice = calculateFinalBasePrice(pricing.getBasePrice(), isWeekend, isHoliday);
-
-        // Aplicar descuento por tamaño de grupo
-        double groupDiscountRate = discountServices.getApplicableGroupDiscount(totalPeople);
-        double priceAfterGroupDiscount = pricing.getBasePrice() * (1 - groupDiscountRate);
-
-        // Descuento por cliente frecuente (solo para el dueño)
-        double frequentDiscountRate = discountServices.getApplicableFrequentClientDiscount(owner.getMonthlyVisits());
-        double ownerPrice = priceAfterGroupDiscount * (1 - frequentDiscountRate);
-
-        // Descuento por cumpleaños (Lógica fija)
-        double birthdayDiscountRate = discountServices.getBirthdayDiscount();
-        long birthdayPeople = countBirthdayPeople(allParticipants);
-        double totalBirthdayDiscount = birthdayPeople * priceAfterGroupDiscount * birthdayDiscountRate;
-
-
-        // 6. Calcular total final
-        double total = (totalPeople - 1) * priceAfterGroupDiscount
-                - totalBirthdayDiscount
-                + ownerPrice;
+        // 3. Obtener Pricing (con precio base) usando ambos valores
+        Pricing pricing = pricingServices.getPricingByLapsAndDuration(
+                request.getLaps(),
+                duration
+        );
+        double basePrice = pricing.getBasePrice();
+        Map<String, Double> discountSummary = calculateDiscountSummary(owner, participants, pricing.getBasePrice());
+        double total = discountServices.calculateTotalPriceWithDiscounts(pricing, owner, participants);
 
 
         // 7. Crear y guardar la reserva
-        Booking booking = createBookingEntity(request, owner, participants, karts, pricing, basePrice, total);
+        Booking booking = createBookingEntity(request, owner, allParticipants, duration, karts, pricing, basePrice, total);
         Booking savedBooking = bookingRepository.save(booking);
 
-        // 8. Crear y guardar la factura
-        Invoice invoice = createInvoice(savedBooking, owner, total);
-        invoiceRepository.save(invoice);
+        // Crear factura CON PDF
+        Invoice invoice = invoiceServices.generateAndSaveInvoice(savedBooking, total, discountSummary);
 
-        // 9. Asociar factura a la reserva
+        // Asociar factura a reserva
         savedBooking.setInvoice(invoice);
         return bookingRepository.save(savedBooking);
+
+
+    }
+    // --- Métodos auxiliares ---
+    private Map<String, Double> calculateDiscountSummary(Client owner, List<Client> participants, double basePrice) {
+        Map<String, Double> summary = new LinkedHashMap<>();
+
+        // Descuento por grupo
+        double groupDiscount = discountServices.getApplicableGroupDiscount(participants.size() + 1);
+        if (groupDiscount > 0) {
+            summary.put("Descuento por grupo", basePrice * (participants.size() + 1) * groupDiscount);
+        }
+
+        // Descuento por cliente frecuente
+        double frequentDiscount = discountServices.getApplicableFrequentClientDiscount(owner.getMonthlyVisits());
+        if (frequentDiscount > 0) {
+            summary.put("Descuento cliente frecuente", basePrice * frequentDiscount);
+        }
+
+        // Descuento por cumpleaños
+        long birthdayPeople = participants.stream().filter(Client::isBirthdayToday).count();
+        if (birthdayPeople > 0) {
+            double birthdayDiscount = discountServices.getBirthdayDiscount();
+            summary.put("Descuento cumpleaños", basePrice * birthdayPeople * birthdayDiscount);
+        }
+
+        return summary;
     }
 
-    // --- Métodos auxiliares ---
-
     private Client validateOwner(Long ownerId) {
-        return clientRepository.findById(ownerId)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        return clientServices.validateClientById(ownerId);
     }
 
     private List<Client> validateParticipants(List<Long> participantIds) {
-        List<Client> participants = clientRepository.findAllById(participantIds);
-        if (participants.size() != participantIds.size()) {
-            throw new RuntimeException("Algunos participantes no fueron encontrados");
-        }
-        return participants;
-    }
-
-    private List<Kart> validateKarts(List<String> kartCodes) {
-        List<Kart> karts = kartRepository.findAllById(kartCodes);
-        if (karts.size() != kartCodes.size()) {
-            throw new RuntimeException("Algunos karts no están disponibles");
-        }
-        return karts;
-    }
-
-    private Pricing validatePricing(Integer laps, Integer duration) {
-        return pricingRepository.findByLapsAndTotalDuration(laps, duration)
-                .orElseThrow(() -> new RuntimeException("Tarifa no disponible para esta configuración"));
+        return clientServices.validateClientsByIds(participantIds);
     }
 
     private List<Client> prepareParticipants(Client owner, List<Client> participants) {
@@ -184,14 +167,14 @@ public class BookingServices {
 
 
     private Booking createBookingEntity(BookingRequest request, Client owner,
-                                        List<Client> participants, List<Kart> karts,
+                                        List<Client> participants, int duration, List<Kart> karts,
                                         Pricing pricing, double basePrice, double total) {
         Booking booking = new Booking();
         booking.setReservationCode(generateReservationCode());
         booking.setDate(request.getDate());
         booking.setStartTime(request.getStartTime());
-        booking.setDuration(request.getDuration());
         booking.setLaps(request.getLaps());
+        booking.setDuration(duration);
         booking.setStatus(Booking.Status.CONFIRMED);
         booking.setOwner(owner);
         booking.setParticipants(participants);
@@ -200,18 +183,28 @@ public class BookingServices {
         return booking;
     }
 
-    private Invoice createInvoice(Booking booking, Client owner, double total) {
+    private Invoice createInvoice(Booking booking, Client owner, double total, Map<String, Double> discountSummary) {
         Invoice invoice = new Invoice();
         invoice.setInvoiceNumber(generateInvoiceNumber());
         invoice.setIssueDate(LocalDateTime.now());
         invoice.setBooking(booking);
         invoice.setClientName(owner.getName());
         invoice.setClientEmail(owner.getEmail());
-        invoice.setTotalToPay(total); // Considerar IVA si aplica
-        invoice.setPdfFilePath("pendiente.pdf");
+        invoice.setTotalToPay(total);
+
+        try {
+            // Generar PDF con el resumen de descuentos
+            byte[] pdfBytes = pdfGenerator.generateBasicInvoice(booking, invoice, discountSummary);
+            invoice.setPdfData(pdfBytes);
+            invoice.setPdfGenerated(true);
+            invoice.setPdfFilePath("invoices/" + invoice.getInvoiceNumber() + ".pdf");
+        } catch (IOException e) {
+            // Manejar el error sin romper el flujo
+            invoice.setPdfGenerated(false);
+        }
+
         return invoice;
     }
-
     private String generateReservationCode() {
         String code;
         do {
@@ -221,8 +214,7 @@ public class BookingServices {
     }
 
     private List<Kart> assignAvailableKarts(LocalDate date, LocalTime startTime, int duration, int kartsNeeded) {
-        LocalTime endTime = startTime.plusMinutes(duration);
-        List<Kart> availableKarts = kartRepository.findAvailableKarts(date, startTime, endTime);
+        List<Kart> availableKarts = kartServices.getAvailableKartsForBooking(date, startTime, duration);
 
         if (availableKarts.size() < kartsNeeded) {
             throw new IllegalStateException(

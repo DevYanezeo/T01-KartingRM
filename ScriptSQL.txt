@@ -1,5 +1,6 @@
 SCRIPT DE POBLACION COMPLETO
 
+use kartingrm;
 INSERT INTO clients (name, email, birth_date, monthly_visits) VALUES
 ('Juan Pérez', 'juan.perez@email.com', '1990-05-15', 0),
 ('María García', 'maria.garcia@email.com', '1985-08-22', 0),
@@ -29,7 +30,7 @@ INSERT INTO kart (kart_code, model, under_maintenance, description, status) VALU
 ('K012', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
 ('K013', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
 ('K014', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K015', 'Sodikart RT8', true, 'En mantenimiento');
+('K015', 'Sodikart RT8', true, 'En mantenimiento','EN_MANTENIMIENTO');
 
 INSERT INTO pricing (laps, base_price, total_duration) VALUES
 (10, 15000.00, 30),  -- Precio base: $15,000

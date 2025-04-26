@@ -48,6 +48,18 @@ public class ClientServices {
         };
     }
 
+    public Client validateClientById(Long clientId) {
+        return clientRepository.findById(clientId)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+    }
+
+    public List<Client> validateClientsByIds(List<Long> clientIds) {
+        return clientIds.stream()
+                .map(this::validateClientById)
+                .toList();
+    }
+
+
     public List<Client> getClientsWithBirthdayToday() {
         return clientRepository.findClientsWithBirthdayToday();
     }

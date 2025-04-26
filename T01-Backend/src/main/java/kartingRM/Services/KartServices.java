@@ -6,7 +6,9 @@ import kartingRM.Repositories.KartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,6 +75,12 @@ public class KartServices {
         kart.setStatus(KartStatus.DISPONIBLE);
         return kartRepository.save(kart);
     }
+
+    public List<Kart> getAvailableKartsForBooking(LocalDate date, LocalTime startTime, int duration) {
+        LocalTime endTime = startTime.plusMinutes(duration);
+        return kartRepository.findAvailableKarts(date, startTime, endTime);
+    }
+
 
     // Buscar por estado
     public List<Kart> findByStatus(KartStatus status) {

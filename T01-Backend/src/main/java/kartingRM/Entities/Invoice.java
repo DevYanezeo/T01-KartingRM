@@ -38,4 +38,11 @@ public class Invoice {
     @Column(nullable = false)
     private String pdfFilePath;
 
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] pdfData;
+
+    @Column(nullable = false)
+    private boolean pdfGenerated = false;
+
 }

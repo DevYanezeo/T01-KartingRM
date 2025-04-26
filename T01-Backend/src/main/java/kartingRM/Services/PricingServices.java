@@ -26,6 +26,11 @@ public class PricingServices {
                 .orElseThrow(() -> new RuntimeException("Tarifa no encontrada para esos valores"));
     }
 
+    public int getDurationByLaps(int laps) {
+        return pricingRepository.findDurationByLaps(laps)
+                .orElseThrow(() -> new RuntimeException("No se encontró duración para esas vueltas"));
+    }
+
     // Guardar nueva tarifa (opcional)
     public Pricing savePricing(Pricing pricing) {
         return pricingRepository.save(pricing);

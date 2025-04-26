@@ -18,7 +18,6 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    // ✅ Crear una nueva reserva
     @PostMapping
     public ResponseEntity<Booking> createBooking(@RequestBody BookingRequest request) {
         Booking createdBooking = bookingService.createBooking(request);
