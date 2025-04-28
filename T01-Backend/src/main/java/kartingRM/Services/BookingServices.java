@@ -1,14 +1,14 @@
 package kartingRM.Services;
 
 import jakarta.transaction.Transactional;
+import kartingRM.DTOs.BookingDTO;
 import kartingRM.Entities.*;
 import kartingRM.Repositories.*;
 import kartingRM.DTOs.BookingRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.*;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,158 +21,73 @@ public class BookingServices {
     private final DiscountServices discountServices;
     private final InvoiceServices invoiceServices;
     private final KartServices kartServices;
-    private final PDFGeneratorServices pdfGenerator;
     private final PricingServices pricingServices;
+    private final BusinessHourService businessHourService;
 
-    private static final double WEEKEND_SURCHARGE = 0.05; // +5%
-    private static final double HOLIDAY_SURCHARGE = 0.05; // +5%
-
+    // En BookingServices
     public Booking createBooking(BookingRequest request) {
-        // 1. Validar datos básicos y calcular duración
-        Client owner = validateOwner(request.getOwnerId());
-        List<Client> participants = validateParticipants(request.getParticipantIds());
 
+        // 0. Validar que el horario de reserva está dentro del horario comercial
+        if (!businessHourService.isWithinBusinessHours(request.getDate(), request.getStartTime(),
+                request.getStartTime().plusMinutes(pricingServices.getDurationByLaps(request.getLaps())))) {
+            throw new IllegalArgumentException("El horario de la reserva está fuera del horario comercial");
+        }
+
+        // 1. Validar clientes
+        Client owner = clientServices.validateClientById(request.getOwnerId());
+        List<Client> participants = clientServices.validateClientsByIds(request.getParticipantIds());
+        List<Client> allParticipants = prepareParticipantsList(owner, participants);
+
+        // 2. Calcular duración según vueltas
         int duration = pricingServices.getDurationByLaps(request.getLaps());
 
-        // 2. Validar disponibilidad de karts (con la duración calculada)
-        List<Kart> karts = assignAvailableKarts(
+        // 3. Validar disponibilidad y asignar karts
+        List<Kart> karts = kartServices.assignKartsForBooking(
                 request.getDate(),
                 request.getStartTime(),
                 duration,
-                participants.size() + 1
+                allParticipants.size()
         );
 
-        List<Client> allParticipants = new ArrayList<>(participants);
-        allParticipants.add(owner);
-        int totalPeople = participants.size();
+        // 4. Incrementar visitas de clientes
+        clientServices.incrementVisits(allParticipants);
 
-        // 3. Incrementar visitas de clientes
-        incrementVisits(owner, participants);
+        // 5. Obtener precio base y pricing
+        Pricing pricing = pricingServices.getPricingByLapsAndDuration(request.getLaps(), duration);
 
-        // 3. Obtener Pricing (con precio base) usando ambos valores
-        Pricing pricing = pricingServices.getPricingByLapsAndDuration(
-                request.getLaps(),
-                duration
-        );
-        double basePrice = pricing.getBasePrice();
-        Map<String, Double> discountSummary = calculateDiscountSummary(owner, participants, pricing.getBasePrice());
-        double total = discountServices.calculateTotalPriceWithDiscounts(pricing, owner, participants);
-
+        // 6. Calcular precio base total (sin descuentos aún)
+        double baseTotal = pricing.getBasePrice() * (allParticipants.size());
 
         // 7. Crear y guardar la reserva
-        Booking booking = createBookingEntity(request, owner, allParticipants, duration, karts, pricing, basePrice, total);
+        Booking booking = createBookingEntity(request, owner, allParticipants, duration, karts, pricing);
         Booking savedBooking = bookingRepository.save(booking);
 
-        // Crear factura CON PDF
-        Invoice invoice = invoiceServices.generateAndSaveInvoice(savedBooking, total, discountSummary);
+        // 8. Generar factura (que ahora calculará los descuentos)
+        Invoice invoice = invoiceServices.generateAndSaveInvoice(savedBooking, baseTotal);
 
-        // Asociar factura a reserva
+        // 9. Asociar factura a reserva y guardar
         savedBooking.setInvoice(invoice);
         return bookingRepository.save(savedBooking);
-
-
-    }
-    // --- Métodos auxiliares ---
-    private Map<String, Double> calculateDiscountSummary(Client owner, List<Client> participants, double basePrice) {
-        Map<String, Double> summary = new LinkedHashMap<>();
-
-        // Descuento por grupo
-        double groupDiscount = discountServices.getApplicableGroupDiscount(participants.size() + 1);
-        if (groupDiscount > 0) {
-            summary.put("Descuento por grupo", basePrice * (participants.size() + 1) * groupDiscount);
-        }
-
-        // Descuento por cliente frecuente
-        double frequentDiscount = discountServices.getApplicableFrequentClientDiscount(owner.getMonthlyVisits());
-        if (frequentDiscount > 0) {
-            summary.put("Descuento cliente frecuente", basePrice * frequentDiscount);
-        }
-
-        // Descuento por cumpleaños
-        long birthdayPeople = participants.stream().filter(Client::isBirthdayToday).count();
-        if (birthdayPeople > 0) {
-            double birthdayDiscount = discountServices.getBirthdayDiscount();
-            summary.put("Descuento cumpleaños", basePrice * birthdayPeople * birthdayDiscount);
-        }
-
-        return summary;
     }
 
-    private Client validateOwner(Long ownerId) {
-        return clientServices.validateClientById(ownerId);
-    }
 
-    private List<Client> validateParticipants(List<Long> participantIds) {
-        return clientServices.validateClientsByIds(participantIds);
-    }
-
-    private List<Client> prepareParticipants(Client owner, List<Client> participants) {
-        List<Client> allParticipants = new ArrayList<>(participants);
+    public List<Client> prepareParticipantsList(Client owner, List<Client> participants) {
+        List<Client> allParticipants = new ArrayList<>(participants.stream()
+                .distinct()
+                .filter(p -> !p.equals(owner)) // Eliminar owner si está en participantes
+                .collect(Collectors.toList()));
         allParticipants.add(owner);
         return allParticipants;
     }
 
-    private void incrementVisits(Client owner, List<Client> participants) {
-        owner.incrementMonthlyVisits();
-        participants.forEach(Client::incrementMonthlyVisits);
-    }
-
-    private boolean isWeekend(LocalDate date) {
-        DayOfWeek day = date.getDayOfWeek();
-        return day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY;
-    }
-
-    private boolean isHoliday(LocalDate date) {
-        // Lista de feriados (ejemplo para Chile)
-        Set<LocalDate> holidays = Set.of(
-                LocalDate.of(date.getYear(), 1, 1),   // Año Nuevo
-                LocalDate.of(date.getYear(), 5, 1),   // Día del Trabajo
-                LocalDate.of(date.getYear(), 9, 18),  // Fiestas Patrias
-                LocalDate.of(date.getYear(), 9, 19),  // Día de las Glorias del Ejército
-                LocalDate.of(date.getYear(), 12, 25)  // Navidad
-        );
-        return holidays.contains(date);
-    }
-
-    private int calculateMaxBirthdayDiscounts(int groupSize) {
-        if (groupSize >= 3 && groupSize <= 5) {
-            return 1; // 1 descuento para grupos de 3-5
-        } else if (groupSize >= 6 && groupSize <= 10) {
-            return 2; // 2 descuentos para grupos de 6-10
-        }
-        return 0; // No aplica para otros tamaños
-    }
-
-    private long countBirthdayPeople(List<Client> participants) {
-        return participants.stream()
-                .filter(Client::isBirthdayToday)
-                .count();
-    }
-
-    private double calculateFinalBasePrice(double basePrice, boolean isWeekend, boolean isHoliday) {
-        double finalPrice = basePrice;
-        if (isWeekend) {
-            finalPrice *= (1 + WEEKEND_SURCHARGE);
-        }
-        if (isHoliday && !isWeekend) { // Solo aplicar si no es fin de semana
-            finalPrice *= (1 + HOLIDAY_SURCHARGE);
-        }
-        return finalPrice;
-    }
-
-    private double calculateFinalTotalPrice(int totalPeople, double groupPrice, double ownerPrice, int birthdayDiscounts) {
-        int regularParticipants = totalPeople - 1 - birthdayDiscounts;
-        return (regularParticipants * groupPrice) + ownerPrice + (birthdayDiscounts * groupPrice * 0.5);
-    }
-
-
     private Booking createBookingEntity(BookingRequest request, Client owner,
-                                        List<Client> participants, int duration, List<Kart> karts,
-                                        Pricing pricing, double basePrice, double total) {
+                                        List<Client> participants, int duration,
+                                        List<Kart> karts, Pricing pricing) {
         Booking booking = new Booking();
         booking.setReservationCode(generateReservationCode());
         booking.setDate(request.getDate());
         booking.setStartTime(request.getStartTime());
+        booking.setEndTime(request.getStartTime().plusMinutes(duration));
         booking.setLaps(request.getLaps());
         booking.setDuration(duration);
         booking.setStatus(Booking.Status.CONFIRMED);
@@ -183,28 +98,6 @@ public class BookingServices {
         return booking;
     }
 
-    private Invoice createInvoice(Booking booking, Client owner, double total, Map<String, Double> discountSummary) {
-        Invoice invoice = new Invoice();
-        invoice.setInvoiceNumber(generateInvoiceNumber());
-        invoice.setIssueDate(LocalDateTime.now());
-        invoice.setBooking(booking);
-        invoice.setClientName(owner.getName());
-        invoice.setClientEmail(owner.getEmail());
-        invoice.setTotalToPay(total);
-
-        try {
-            // Generar PDF con el resumen de descuentos
-            byte[] pdfBytes = pdfGenerator.generateBasicInvoice(booking, invoice, discountSummary);
-            invoice.setPdfData(pdfBytes);
-            invoice.setPdfGenerated(true);
-            invoice.setPdfFilePath("invoices/" + invoice.getInvoiceNumber() + ".pdf");
-        } catch (IOException e) {
-            // Manejar el error sin romper el flujo
-            invoice.setPdfGenerated(false);
-        }
-
-        return invoice;
-    }
     private String generateReservationCode() {
         String code;
         do {
@@ -213,22 +106,28 @@ public class BookingServices {
         return code;
     }
 
-    private List<Kart> assignAvailableKarts(LocalDate date, LocalTime startTime, int duration, int kartsNeeded) {
-        List<Kart> availableKarts = kartServices.getAvailableKartsForBooking(date, startTime, duration);
-
-        if (availableKarts.size() < kartsNeeded) {
-            throw new IllegalStateException(
-                    "No hay suficientes karts. Requeridos: " + kartsNeeded +
-                            ", Disponibles: " + availableKarts.size()
-            );
-        }
-
-        return availableKarts.stream()
-                .limit(kartsNeeded)
+    // Añade estos métodos a tu BookingServices
+    public List<BookingDTO> getBookingsByDate(LocalDate date) {
+        List<Booking> bookings = bookingRepository.findByDate(date);
+        return bookings.stream()
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    private String generateInvoiceNumber() {
-        return "INV-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+    private BookingDTO convertToDTO(Booking booking) {
+        BookingDTO dto = new BookingDTO();
+        dto.setId(booking.getId());
+        dto.setReservationCode(booking.getReservationCode());
+        dto.setDate(booking.getDate());
+        dto.setStartTime(booking.getStartTime());
+        dto.setEndTime(booking.getEndTime());
+        dto.setStatus(booking.getStatus().toString());
+        dto.setOwnerName(booking.getOwner().getName());
+        dto.setAssignedKarts(booking.getAssignedKarts().stream()
+                .map(Kart::getKartCode)
+                .collect(Collectors.toList()));
+        dto.setLaps(booking.getLaps());
+        dto.setDuration(booking.getDuration());
+        return dto;
     }
 }

@@ -1,5 +1,6 @@
 package kartingRM.Controllers;
 
+import kartingRM.DTOs.InvoiceListDTO;
 import kartingRM.Entities.Invoice;
 import kartingRM.Services.InvoiceServices;
 import org.springframework.http.HttpHeaders;
@@ -9,9 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/invoices")
+@CrossOrigin(origins = "*")
 public class InvoiceController {
 
     private final InvoiceServices invoiceService;
@@ -21,9 +24,16 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Invoice>> getAllInvoices() {
-        return ResponseEntity.ok(invoiceService.getAllInvoices());
+    public ResponseEntity<List<InvoiceListDTO>> getAllInvoices() {
+        List<Invoice> invoices = invoiceService.getAllInvoices();
+
+        List<InvoiceListDTO> dtos = invoices.stream()
+                .map(InvoiceListDTO::fromEntity) // Ahora sí usamos el método fromEntity
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Invoice> getById(@PathVariable Long id) {

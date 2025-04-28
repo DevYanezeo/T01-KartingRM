@@ -4,8 +4,11 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class ClientRequest {
+public class ClientDTO {
+    private Long id;
     private String name;
     private String email;
-    private LocalDate birthDate;    // Para validar descuentos por cumpleaños
+    private String birthDate;
+    private int monthlyVisits;
+
 }

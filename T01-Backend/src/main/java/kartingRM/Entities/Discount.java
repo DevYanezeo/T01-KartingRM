@@ -14,16 +14,14 @@ public class Discount {
     private Long id;
 
     @Column(nullable = false, length = 20)
-    private String discountType; // GROUP_SIZE, FREQUENT_CLIENT, BIRTHDAY
+    private String discountType;
 
     @Column(nullable = false)
-    private Double percentage; // 0.10 para 10%, etc.
+    private Double percentage;
 
-    // Para GROUP_SIZE (PDF pág.3)
     private Integer minGroupSize;
     private Integer maxGroupSize;
 
-    // Para FREQUENT_CLIENT (PDF pág.3)
     private Integer minVisits;
     private Integer maxVisits;
 }

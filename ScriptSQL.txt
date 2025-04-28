@@ -1,6 +1,6 @@
-SCRIPT DE POBLACION COMPLETO
+USE kartingrm;
 
-use kartingrm;
+-- Insertar clientes
 INSERT INTO clients (name, email, birth_date, monthly_visits) VALUES
 ('Juan Pérez', 'juan.perez@email.com', '1990-05-15', 0),
 ('María García', 'maria.garcia@email.com', '1985-08-22', 0),
@@ -15,29 +15,31 @@ INSERT INTO clients (name, email, birth_date, monthly_visits) VALUES
 ('Jose Ramírez', 'jose.ramirez@email.com', '1992-06-10', 0),
 ('Carlos Díaz', 'carlos.diaz@email.com', '1987-09-05', 0);
 
-INSERT INTO kart (kart_code, model, under_maintenance, description, status) VALUES
-('K001', 'Sodikart RT8', false, 'Kart en perfecto estado', 'DISPONIBLE'),
-('K002', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K003', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K004', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K005', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K006', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K007', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K008', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K009', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K010', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K011', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K012', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K013', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K014', 'Sodikart RT8', false, 'Kart en perfecto estado','DISPONIBLE'),
-('K015', 'Sodikart RT8', true, 'En mantenimiento','EN_MANTENIMIENTO');
+-- Insertar karts 
+INSERT INTO kart (kart_code, model, under_maintenance, description) VALUES
+('K001', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K002', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K003', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K004', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K005', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K006', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K007', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K008', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K009', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K010', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K011', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K012', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K013', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K014', 'Sodikart RT8', false, 'Kart en perfecto estado'),
+('K015', 'Sodikart RT8', true, 'En mantenimiento');
 
+-- Insertar precios
 INSERT INTO pricing (laps, base_price, total_duration) VALUES
 (10, 15000.00, 30),  -- Precio base: $15,000
 (15, 20000.00, 35),  -- Precio base: $20,000
 (20, 25000.00, 40);  -- Precio base: $25,000
 
-
+-- Insertar descuentos
 INSERT INTO discounts (discount_type, percentage, min_group_size, max_group_size, min_visits, max_visits) VALUES
 ('GROUP_SIZE', 0.00, 1, 2, NULL, NULL),
 ('GROUP_SIZE', 0.10, 3, 5, NULL, NULL),

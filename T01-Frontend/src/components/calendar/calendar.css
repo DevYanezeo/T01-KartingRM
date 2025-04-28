@@ -1,0 +1,649 @@
+:root {
+  --primary: #2C3E50;
+  --primary-dark: #1A252F;
+  --accent: #E74C3C;
+  --accent-light: #FF6B6B;
+  --secondary: #3498DB;
+  --secondary-light: #5DADE2;
+  --text-light: #ECF0F1;
+  --text-lighter: #F5F7FA;
+  --bg-light: #F8F9FA;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --success: #27AE60;
+  --warning: #F39C12;
+  --error: #E74C3C;
+  --base-minute-height: 3px; /* Altura base para cada minuto */
+}
+
+/* Estructura General */
+main.flex-grow {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.min-h-screen.flex.flex-col {
+  gap: 1rem;
+}
+
+/* Tabla del Calendario */
+.calendar-scroll-container {
+  margin-top: 1rem;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 1px;
+  background-color: white;
+  table-layout: fixed;
+}
+
+/* Encabezados */
+.calendar-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--primary);
+  color: var(--text-light);
+  padding: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 2px solid var(--primary-dark);
+  min-width: 120px;
+  z-index: 10;
+}
+
+.calendar-table thead th.time-column {
+  background-color: var(--primary-dark);
+  min-width: 80px;
+  z-index: 15;
+}
+
+/* Celdas de Hora - Con altura base fija */
+.hour-row {
+  height: 180px; /* Altura base para una hora completa */
+}
+
+.hour-cell {
+  padding: 0;
+  position: relative;
+  border: 1px solid var(--border-color);
+  vertical-align: top;
+}
+
+.hour-cell-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: visible; /* Cambiado a visible para permitir que las reservas excedan el contenedor */
+}
+
+.calendar-table .time-column {
+  background-color: var(--primary);
+  color: var(--text-light);
+  text-align: center;
+  font-weight: 500;
+  padding: 0.5rem;
+  border-right: 2px solid var(--primary-dark);
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+
+/* Celdas Disponibles */
+.available-cell {
+  height: 100%;
+  background-color: var(--bg-light);
+  padding: 0.5rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+
+.available-cell:hover {
+  background-color: var(--secondary-light);
+  color: var(--text-light);
+}
+
+.available-cell.full-hour {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  opacity: 0.5;
+}
+
+/* Posicionamiento de las Reservas - Ahora con clases de duración */
+.booking-position-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  overflow: visible;
+  min-height: 25px;
+  box-sizing: border-box;
+  padding: 0 1px;
+}
+
+/* Generar clases de duración para intervalos de 5 minutos */
+/* 5 minutos */
+.booking-position-wrapper.duration-5 {
+  height: calc(var(--base-minute-height) * 5);
+}
+
+/* 10 minutos */
+.booking-position-wrapper.duration-10 {
+  height: calc(var(--base-minute-height) * 10);
+}
+
+/* 15 minutos */
+.booking-position-wrapper.duration-15 {
+  height: calc(var(--base-minute-height) * 15);
+}
+
+/* 20 minutos */
+.booking-position-wrapper.duration-20 {
+  height: calc(var(--base-minute-height) * 20);
+}
+
+/* 25 minutos */
+.booking-position-wrapper.duration-25 {
+  height: calc(var(--base-minute-height) * 25);
+}
+
+/* 30 minutos */
+.booking-position-wrapper.duration-30 {
+  height: calc(var(--base-minute-height) * 30);
+}
+
+/* 35 minutos */
+.booking-position-wrapper.duration-35 {
+  height: calc(var(--base-minute-height) * 35);
+}
+
+/* 40 minutos */
+.booking-position-wrapper.duration-40 {
+  height: calc(var(--base-minute-height) * 40);
+}
+
+/* 45 minutos */
+.booking-position-wrapper.duration-45 {
+  height: calc(var(--base-minute-height) * 45);
+}
+
+/* 50 minutos */
+.booking-position-wrapper.duration-50 {
+  height: calc(var(--base-minute-height) * 50);
+}
+
+/* 55 minutos */
+.booking-position-wrapper.duration-55 {
+  height: calc(var(--base-minute-height) * 55);
+}
+
+/* 60 minutos (1 hora) */
+.booking-position-wrapper.duration-60 {
+  height: calc(var(--base-minute-height) * 60);
+}
+
+/* 1h15m */
+.booking-position-wrapper.duration-75 {
+  height: calc(var(--base-minute-height) * 75);
+}
+
+/* 1h30m */
+.booking-position-wrapper.duration-90 {
+  height: calc(var(--base-minute-height) * 90);
+}
+
+/* 1h45m */
+.booking-position-wrapper.duration-105 {
+  height: calc(var(--base-minute-height) * 105);
+}
+
+/* 2h */
+.booking-position-wrapper.duration-120 {
+  height: calc(var(--base-minute-height) * 120);
+}
+
+
+
+
+
+/* Añadir al final del archivo CSS existente */
+
+/* Mejoras para celdas que exceden la hora */
+.booked-cell.exceeds-hour {
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: visible;
+}
+
+/* Mejoras para celdas disponibles y parcialmente disponibles */
+.available-cell.full-hour {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.available-cell.full-hour:hover {
+  opacity: 0.9;
+}
+
+/* Mejoras para la visualización compacta */
+.booking-info.compact-size {
+  font-size: 0.8rem;
+}
+
+.booking-info.compact-size .booking-time {
+  font-size: 0.75rem;
+  padding: 1px 3px;
+}
+
+.booking-info.compact-size .client-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.booking-info.compact-size .reservation-code {
+  font-size: 0.7rem;
+}
+
+/* Mejoras generales de visualización */
+.hour-cell-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: visible; /* Permite que las reservas excedan el contenedor */
+}
+
+/* Mejora para la superposición de reservas */
+.booking-position-wrapper {
+  z-index: 5;
+}
+
+.booking-position-wrapper:hover {
+  z-index: 25;
+}
+
+
+/* Estilos adicionales para mejorar la visualización de reservas */
+
+/* Estilo para celdas muy cortas */
+.booked-cell.very-short {
+  padding: 1px 3px;
+  border-radius: 3px;
+  min-height: 22px;
+  overflow: hidden;
+}
+
+.booking-info.minimal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.client-name-mini {
+  font-size: 0.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: bold;
+}
+
+/* Mejoras para celdas parcialmente disponibles */
+.available-cell.partially-available {
+  background-color: var(--bg-light);
+  color: var(--primary);
+  opacity: 0.5;
+}
+
+.available-cell.partially-available:hover {
+  background-color: var(--secondary-light);
+  color: var(--text-light);
+  opacity: 0.7;
+}
+
+/* Mejoras para las reservas que se extienden más allá de una hora */
+.booking-position-wrapper.duration-65,
+.booking-position-wrapper.duration-70,
+.booking-position-wrapper.duration-75,
+.booking-position-wrapper.duration-80,
+.booking-position-wrapper.duration-85,
+.booking-position-wrapper.duration-90,
+.booking-position-wrapper.duration-95,
+.booking-position-wrapper.duration-100,
+.booking-position-wrapper.duration-105,
+.booking-position-wrapper.duration-110,
+.booking-position-wrapper.duration-115,
+.booking-position-wrapper.duration-120 {
+  z-index: 20;
+}
+
+/* Asegurar que las reservas que comienzan a mitad de hora se vean correctamente */
+.hour-cell-container {
+  overflow: visible;
+}
+
+/* Incrementar el z-index cuando se hace hover sobre una reserva */
+.booked-cell:hover {
+  z-index: 25;
+}
+
+/* Mejorar el tooltip para reservas muy cortas */
+.booked-cell.very-short {
+  position: relative;
+}
+
+.booked-cell.very-short:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: -30px;
+  left: 0;
+  background-color: var(--primary-dark);
+  color: var(--text-light);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 30;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+
+
+
+
+
+/* Celdas Reservadas */
+.booked-cell {
+  height: 100%;
+  background-color: var(--accent-light);
+  padding: 0.5rem;
+  color: var(--text-lighter);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border-left: 3px solid var(--accent);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.booked-cell:hover {
+  background-color: var(--accent);
+  transform: translateZ(0) scale(1.02);
+  z-index: 20;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.booked-cell.proportional-height {
+  height: 100%;
+  max-height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Gestión de contenido en celdas pequeñas */
+.booking-info.short-duration {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.booking-info.short-duration .booking-time {
+  margin-bottom: 0;
+  font-size: 0.7rem;
+}
+
+.booking-info.short-duration .client-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-size: 0.7rem;
+}
+
+/* Información de Reserva */
+.booking-info {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.booking-time {
+  font-weight: bold;
+  font-size: 0.8rem;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-bottom: 3px;
+  align-self: flex-start;
+}
+
+.client-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reservation-code {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.pricing-info {
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-top: auto;
+  padding-top: 3px;
+}
+
+.kart-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.kart-badge {
+  display: inline-block;
+  background-color: var(--primary-dark);
+  color: var(--text-light);
+  padding: 0.15rem 0.4rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  margin-right: 3px;
+  line-height: 1;
+}
+
+/* Encabezado del Calendario */
+.calendar-header {
+  background-color: var(--primary);
+  color: var(--text-light);
+  padding: 1.5rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.calendar-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+}
+
+.nav-button {
+  background-color: var(--secondary);
+  color: var(--text-light);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  background-color: var(--secondary-light);
+}
+
+.date-display {
+  background-color: var(--primary-dark);
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.today-indicator {
+  background-color: var(--success) !important;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.weekend-column {
+  background-color: rgba(245, 247, 250, 0.5);
+}
+
+.current-month-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: var(--text-lighter);
+}
+
+/* Error display */
+.p-4.bg-yellow-50.border-l-4.border-yellow-400.text-yellow-700 {
+  margin: 2rem;
+  padding: 1rem;
+  border-radius: 0.25rem;
+}
+
+/* Estilos adicionales para mejorar la visualización de las reservas */
+.booking-position-wrapper:hover {
+  z-index: 25;
+}
+
+/* Ajustes específicos para mejorar visibilidad de duraciones */
+/* Para altura muy pequeña (5-15 min) */
+.booking-position-wrapper[class*="duration-"]:not([class*="duration-6"]):not([class*="duration-9"]):not([class*="duration-12"]) {
+  min-height: 25px; /* Altura mínima para reservas muy cortas */
+}
+
+/* Ajuste específico para hacer que el contenedor de una hora se relacione proporcionalmente con los minutos */
+@media screen and (min-width: 768px) {
+  :root {
+    --base-minute-height: 3px; /* Ajusta este valor para cambiar la proporción altura/minuto */
+  }
+  
+  .hour-row {
+    height: calc(var(--base-minute-height) * 60); /* 60 minutos = 1 hora */
+  }
+}
+
+/* Responsividad */
+@media screen and (max-width: 768px) {
+  :root {
+    --base-minute-height: 2.5px; /* Ligeramente menor para pantallas más pequeñas */
+  }
+  
+  .hour-row {
+    height: 150px;
+  }
+  
+  .calendar-table thead th {
+    min-width: 100px;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .calendar-table .time-column {
+    min-width: 60px;
+    padding: 0.3rem;
+    font-size: 0.75rem;
+  }
+  
+  .booking-info {
+    font-size: 0.7rem;
+  }
+  
+  .client-name {
+    font-size: 0.8rem;
+  }
+  
+  .booking-time {
+    font-size: 0.7rem;
+  }
+  
+  .kart-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  .calendar-header {
+    padding: 1rem;
+  }
+  
+  .calendar-title {
+    font-size: 1.2rem;
+  }
+  
+  .nav-button {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Para pantallas muy pequeñas */
+@media screen and (max-width: 480px) {
+  :root {
+    --base-minute-height: 2px; /* Aún menor para pantallas muy pequeñas */
+  }
+  
+  .hour-row {
+    height: 120px;
+  }
+  
+  .calendar-table thead th {
+    min-width: 80px;
+  }
+  
+  .calendar-table .time-column {
+    min-width: 50px;
+  }
+}

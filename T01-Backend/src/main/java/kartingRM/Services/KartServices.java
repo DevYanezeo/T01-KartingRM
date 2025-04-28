@@ -1,9 +1,10 @@
 package kartingRM.Services;
 
 import kartingRM.Entities.Kart;
-import kartingRM.Entities.Kart.KartStatus;
 import kartingRM.Repositories.KartRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import kartingRM.DTOs.KartDTO;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -11,13 +12,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 
 @Service
+@RequiredArgsConstructor
 public class KartServices {
-    @Autowired
-    private KartRepository kartRepository;
+    private final KartRepository kartRepository;
 
-    // Registro de kart (ahora con estado DISPONIBLE por defecto)
     public Kart registerKart(String kartCode, String model, boolean underMaintenance) {
         if (kartRepository.existsByKartCode(kartCode)) {
             throw new IllegalArgumentException("Kart with code " + kartCode + " already exists");
@@ -27,64 +29,93 @@ public class KartServices {
         kart.setKartCode(kartCode);
         kart.setModel(model);
         kart.setUnderMaintenance(underMaintenance);
-        kart.setStatus(underMaintenance ? KartStatus.EN_MANTENIMIENTO : KartStatus.DISPONIBLE);
 
         return kartRepository.save(kart);
     }
 
-    // Obtener todos los karts
     public List<Kart> getAllKarts() {
         return kartRepository.findAll();
     }
 
-    // Obtener karts disponibles (DISPONIBLE y sin mantenimiento)
     public List<Kart> getAvailableKarts() {
         return kartRepository.findAvailableKartsOnlyByMaintenance();
     }
 
-    // Actualizar mantenimiento (y estado asociado)
     public Kart updateMaintenanceStatus(String kartCode, boolean underMaintenance) {
-        Kart kart = kartRepository.findByKartCode(kartCode)
-                .orElseThrow(() -> new IllegalArgumentException("Kart not found"));
-
+        Kart kart = findKartByCode(kartCode);
         kart.setUnderMaintenance(underMaintenance);
-        kart.setStatus(underMaintenance ? KartStatus.EN_MANTENIMIENTO : KartStatus.DISPONIBLE);
-
         return kartRepository.save(kart);
     }
 
-    // --- Nuevos métodos para manejo de estados ---
-    // Reservar kart
-    public Kart reserveKart(String kartCode) {
-        Kart kart = kartRepository.findByKartCode(kartCode)
-                .orElseThrow(() -> new IllegalArgumentException("Kart not found"));
 
-        if (kart.getStatus() != KartStatus.DISPONIBLE) {
-            throw new IllegalStateException("Kart is not available for reservation");
+    public Kart releaseKart(String kartCode) {
+        Kart kart = findKartByCode(kartCode);
+        return kartRepository.save(kart);
+    }
+
+    // En el servicio
+    public List<Kart> assignKartsForBooking(LocalDate date, LocalTime startTime, int duration, int kartsNeeded) {
+        // Calculamos el tiempo de finalización
+        LocalTime endTime = startTime.plusMinutes(duration);
+
+        // Encontramos los karts disponibles en el rango de tiempo solicitado
+        List<Kart> availableKarts = kartRepository.findAvailableKarts(date, startTime, endTime);
+
+        if (availableKarts.size() < kartsNeeded) {
+            throw new IllegalStateException(
+                    "No hay suficientes karts disponibles. Requeridos: " + kartsNeeded + ", Disponibles: " + availableKarts.size()
+            );
         }
 
-        kart.setStatus(KartStatus.RESERVADO);
-        return kartRepository.save(kart);
-    }
+        // Seleccionamos los karts para la reserva
+        List<Kart> selectedKarts = availableKarts.stream()
+                .limit(kartsNeeded)
+                .collect(Collectors.toList());
 
-    // Liberar kart
-    public Kart releaseKart(String kartCode) {
-        Kart kart = kartRepository.findByKartCode(kartCode)
-                .orElseThrow(() -> new IllegalArgumentException("Kart not found"));
+        // Guardamos las reservas
+        kartRepository.saveAll(selectedKarts);
 
-        kart.setStatus(KartStatus.DISPONIBLE);
-        return kartRepository.save(kart);
-    }
-
-    public List<Kart> getAvailableKartsForBooking(LocalDate date, LocalTime startTime, int duration) {
-        LocalTime endTime = startTime.plusMinutes(duration);
-        return kartRepository.findAvailableKarts(date, startTime, endTime);
+        return selectedKarts;
     }
 
 
-    // Buscar por estado
-    public List<Kart> findByStatus(KartStatus status) {
-        return kartRepository.findByStatus(status);
+    private Kart findKartByCode(String kartCode) {
+        return kartRepository.findByKartCode(kartCode)
+                .orElseThrow(() -> new IllegalArgumentException("Kart not found with code: " + kartCode));
+    }
+
+    public List<KartDTO> getAllKartsWithRentals() {
+        return kartRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<KartDTO> getAvailableKartsWithRentals() {
+        return kartRepository.findAvailableKartsOnlyByMaintenance().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public KartDTO updateMaintenanceStatusWithRentalCount(String kartCode, boolean underMaintenance) {
+        Kart kart = findKartByCode(kartCode);
+        kart.setUnderMaintenance(underMaintenance);
+
+        // Actualiza la fecha solo cuando se envía a mantención
+        if (underMaintenance) {
+            kart.setLastMaintenance(LocalDate.now());
+        }
+
+        return convertToDTO(kartRepository.save(kart));
+    }
+
+    private KartDTO convertToDTO(Kart kart) {
+        KartDTO dto = new KartDTO();
+        dto.setKartCode(kart.getKartCode());
+        dto.setModel(kart.getModel());
+        dto.setUnderMaintenance(kart.isUnderMaintenance());
+        dto.setLastMaintenance(kart.getLastMaintenance());
+        dto.setDescription(kart.getDescription());
+        return dto;
     }
 
 

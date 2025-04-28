@@ -3,6 +3,7 @@ package kartingRM.Entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,9 +20,6 @@ public class Kart {
     @Column(nullable = false)
     private String model;
 
-    @Enumerated(EnumType.STRING)
-    private KartStatus status;
-
     @Column(nullable = false)
     private boolean underMaintenance = false;
 
@@ -31,10 +29,9 @@ public class Kart {
     @ManyToMany(mappedBy = "assignedKarts")
     private List<Booking> bookings = new ArrayList<>();
 
-    // Enum para estados del kart
-    public enum KartStatus {
-        DISPONIBLE,
-        RESERVADO,
-        EN_MANTENIMIENTO
-    }
+    @Column(name = "last_maintenance")
+    private LocalDate lastMaintenance;
+
+
+
 }

@@ -1,5 +1,6 @@
 package kartingRM.Controllers;
 
+import kartingRM.DTOs.ClientDTO;
 import kartingRM.Entities.Client;
 import kartingRM.Services.ClientServices;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/client")
@@ -14,6 +16,26 @@ import java.util.List;
 public class ClientController {
     @Autowired
     private ClientServices clientService;
+
+    // Agregar este nuevo endpoint
+    @GetMapping("/all")
+    public ResponseEntity<List<ClientDTO>> getAllClients() {
+        List<Client> clients = clientService.getAllClients();
+
+        List<ClientDTO> clientDTOs = clients.stream()
+                .map(client -> {
+                    ClientDTO dto = new ClientDTO();
+                    dto.setId(client.getId());
+                    dto.setName(client.getName());
+                    dto.setEmail(client.getEmail());
+                    dto.setBirthDate(String.valueOf(client.getBirthDate()));
+                    dto.setMonthlyVisits(client.getMonthlyVisits());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(clientDTOs);
+    }
 
     // Manteniendo tu endpoint original
     @PostMapping("/registerClient")

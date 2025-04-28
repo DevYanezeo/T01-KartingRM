@@ -1,30 +1,61 @@
 import React, { useState } from 'react';
-import { FaSearch, FaUser, FaChevronDown, FaFlagCheckered } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
-import logo from '../../assets/logo.svg';
+import { Link, useLocation } from 'react-router-dom';
+import { FaMoneyBillWave} from 'react-icons/fa';
+import { 
+  FaHome,
+  FaCalendarAlt,
+  FaUsers,
+  FaCarAlt,
+  FaChartBar,
+  FaCog,
+  FaChevronDown,
+  FaUserCircle,
+  FaBell
+} from 'react-icons/fa';
 import './Navbar.css';
 
 const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [userDropdown, setUserDropdown] = useState(false);
+  const location = useLocation();
 
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
+  const navItems = [
+    { path: '/', icon: <FaHome />, text: 'Dashboard' },
+    { path: '/calendar', icon: <FaCalendarAlt />, text: 'Reservas' },
+    { path: '/clientes', icon: <FaUsers />, text: 'Clientes' },
+    { path: '/karts', icon: <FaCarAlt />, text: 'Flota Karts' },
+    { path: '/reportes', icon: <FaChartBar />, text: 'Reportes' },
+    { path: '/tarifas', icon: <FaCog />, text: 'Tarifas & Descuentos' },
+    { path: '/invoice', icon: <FaMoneyBillWave />, text: 'Comprobantes de Pagos' }
+  ];
 
   return (
-    <nav className="navbar">
-      <div className="logo-container">
-        <img src={logo} alt="KartingRM Logo" className="logo" />
+    <header className="admin-navbar">
+      <div className="navbar-brand">
+        <Link to="/" className="logo-link">
+          <div className="logo-container">
+            <span className="logo-icon">🏎️</span>
+            <span className="logo-text">KartingRM Admin</span>
+          </div>
+        </Link>
       </div>
 
-      <div className="nav-links">
-        <Link to="/"><FaFlagCheckered className="nav-icon" /> Inicio</Link>
-        <Link to="/tracks">Pistas</Link>
-        <Link to="/events">Eventos</Link>
-        <Link to="/contact">Contacto</Link>
-        <Link to="/reservations" className="reservar-btn">Reservar Ahora</Link>
-      </div>
-    </nav>
+      <nav className="navbar-main">
+        <ul className="nav-list">
+          {navItems.map((item) => (
+            <li key={item.path} className="nav-item">
+              <Link
+                to={item.path}
+                className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-text">{item.text}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+    </header>
   );
 };
 

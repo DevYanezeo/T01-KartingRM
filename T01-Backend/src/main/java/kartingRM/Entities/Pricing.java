@@ -1,5 +1,6 @@
 package kartingRM.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -15,13 +16,13 @@ public class Pricing {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private Integer laps; // 10, 15 o 20
+    private Integer laps;
 
     @Column(nullable = false)
-    private Double basePrice; // Precio base (días normales)
+    private Double basePrice;
 
     @Column(nullable = false)
-    private Integer totalDuration; // 30, 35 o 40 min
+    private Integer totalDuration;
 
     @OneToMany(mappedBy = "pricing")
     private List<Booking> bookings = new ArrayList<>();
@@ -29,7 +30,7 @@ public class Pricing {
     public Double getPriceForDay(boolean isWeekend, boolean isHoliday) {
         double price = basePrice;
         if (isWeekend || isHoliday) {
-            price *= 1.05; // +5% para fines de semana y feriados
+            price *= 1.05;
         }
         return price;
     }

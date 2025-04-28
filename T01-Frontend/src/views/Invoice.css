@@ -1,0 +1,230 @@
+:root {
+    --primary: #2C3E50;
+    --primary-dark: #1A252F;
+    --accent: #E74C3C;
+    --accent-light: #FF6B6B;
+    --secondary: #3498DB;
+    --text-light: #ECF0F1;
+    --text-lighter: #F5F7FA;
+    --bg-light: #F8F9FA;
+    --border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .invoices-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-light);
+    color: var(--primary-dark);
+  }
+  
+  .invoices-container {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  .invoices-header {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .invoices-header h1 {
+    font-size: 2.2rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .invoices-header p {
+    color: var(--primary);
+    opacity: 0.8;
+    font-size: 1.1rem;
+  }
+  
+  .invoices-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    align-items: center;
+  }
+  
+  .search-box {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+  }
+  
+  .search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #777;
+  }
+  
+  .date-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+  }
+  
+  .date-filter input {
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .calendar-icon {
+    position: absolute;
+    left: 1rem;
+    color: #777;
+  }
+  
+  .clear-filter {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+  
+  .clear-filter:hover {
+    text-decoration: underline;
+  }
+  
+  .refresh-btn {
+    background: var(--secondary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.3s;
+  }
+  
+  .refresh-btn:hover {
+    background: #2980B9;
+  }
+  
+  .refresh-btn:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+  }
+  
+  .error-message {
+    color: #d63031;
+    background: #ffebee;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #d63031;
+  }
+  
+  .invoices-table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+  
+  .loading-message,
+  .no-results {
+    padding: 2rem;
+    text-align: center;
+    color: #666;
+  }
+  
+  .invoices-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .invoices-table th,
+  .invoices-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .invoices-table th {
+    background: var(--primary);
+    color: white;
+    font-weight: 500;
+  }
+  
+  .invoices-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  .status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  
+  .status-badge.paid {
+    background: #27ae60;
+    color: white;
+  }
+  
+  .status-badge.pending {
+    background: #f39c12;
+    color: white;
+  }
+  
+  .download-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .download-btn:hover {
+    background: var(--accent-light);
+  }
+  
+  @media (max-width: 768px) {
+    .invoices-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .invoices-table th,
+    .invoices-table td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .download-btn {
+      padding: 0.35rem 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
