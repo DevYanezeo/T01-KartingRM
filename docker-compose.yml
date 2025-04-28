@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./T01-Frontend  # Ruta al directorio del frontend
+      dockerfile: Dockerfile    # Asegúrate de tener un Dockerfile en ese directorio
+    ports:
+      - "5173:5173"  # Asegúrate de que el puerto 5173 esté mapeado correctamente
+    environment:
+      - VITE_BACKEND_URL=http://backend:8090  # Cambia si es necesario
+    networks:
+      - karting_network
+
+  backend:
+    build:
+      context: ./T01-Backend  # Ruta al directorio del backend
+      dockerfile: Dockerfile   # Asegúrate de tener un Dockerfile en el backend
+    ports:
+      - "8090:8090"  # Asegúrate de que el puerto 8090 esté mapeado
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev  # Si es necesario, cambia esta configuración
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/yourdatabase  # URL de la base de datos
+      - SPRING_DATASOURCE_USERNAME=youruser  # Usuario de la base de datos
+      - SPRING_DATASOURCE_PASSWORD=yourpassword  # Contraseña de la base de datos
+    depends_on:
+      - mysql  # El backend depende de MySQL
+    networks:
+      - karting_network
+
+  mysql:
+    image: mysql:5.7  # Usamos la imagen oficial de MySQL
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: yourpassword  # Contraseña de root
+      MYSQL_DATABASE: yourdatabase  # Nombre de la base de datos que se crea automáticamente
+      MYSQL_USER: youruser  # Usuario que se creará
+      MYSQL_PASSWORD: yourpassword  # Contraseña para el usuario
+    ports:
+      - "3307:3307"  # Exponemos el puerto 3306 de MySQL
+    networks:
+      - karting_network
+
+networks:
+  karting_network:
+    driver: bridge

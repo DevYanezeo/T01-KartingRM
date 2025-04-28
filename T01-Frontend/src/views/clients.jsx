@@ -3,7 +3,7 @@ import { FaUser, FaBirthdayCake, FaSearch, FaSync, FaExclamationTriangle } from 
 import axios from 'axios';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
-import './Clients.css';
+import './clients.css';
 
 const Clients = () => {
   const [clients, setClients] = useState([]);

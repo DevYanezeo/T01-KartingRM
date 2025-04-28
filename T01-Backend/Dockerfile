@@ -1,5 +1,5 @@
 # Utilizamos la imagen de OpenJDK para crear el contenedor
-FROM openjdk:17-jdk-slim
+FROM openjdk:23-jdk-slim
 
 # Establecer el directorio de trabajo dentro del contenedor
 WORKDIR /app
